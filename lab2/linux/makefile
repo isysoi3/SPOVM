@@ -8,7 +8,7 @@ LDFLAGS=
 all: $(SOURCES) $(EXECUTABLE)
 	
 $(EXECUTABLE): $(OBJECTS) 
-	$(CC) $@.o -o $@ $(LDFLAGS)
+	$(CC) $@.o -o $@.out $(LDFLAGS)
 
 .cpp.o:
 	$(CC) $(CFLAGS) $< -o $@
