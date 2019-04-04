@@ -18,6 +18,7 @@
 std::stack <pid_t> childPids; 
 
 void printMenu() {
+    std::cout << "Child processes: " << childPids.size() << std::endl;
     std::cout << "[+] - add process\n";
     std::cout << "[-] - remove process\n";
     std::cout << "[q] - exit\n";
@@ -30,10 +31,7 @@ void addChildProcess() {
             //failed to frok
             break;
         case 0: //child
-            while (true) {
-                std::cout << "Process: " << getpid() << std::endl;
-                sleep(DELAY_TIME_SEC);
-            }
+            execv("child", NULL);
             break;	
         default: //parent
             childPids.push(pid);
@@ -67,6 +65,7 @@ int main() {
     while(!isFinished) {
         printMenu();
         std::cin >> operation;
+        std::cin.ignore();
         switch (operation) {
             case '+':
                 addChildProcess();

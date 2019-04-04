@@ -1,14 +1,14 @@
 CC=g++
 CFLAGS=-c 
-SOURCES=parent.cpp
+SOURCES=parent.cpp child.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
-EXECUTABLE=parent
-LDFLAGS=-lncurses
+EXECUTABLE=parent child
+LDFLAGS=
 
 all: $(SOURCES) $(EXECUTABLE)
 	
 $(EXECUTABLE): $(OBJECTS) 
-	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
+	$(CC) $@.o -o $@ $(LDFLAGS)
 
 .cpp.o:
 	$(CC) $(CFLAGS) $< -o $@
