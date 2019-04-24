@@ -30,21 +30,6 @@ void printMenu() {
     std::cout << "[q] - exit\n";
 }
 
-void addChildProcess() {
-    pid_t pid = fork();
-    switch(pid) {
-        case -1: 
-            //failed to frok
-            break;
-        case 0: //child
-            execv("child.out", NULL);
-            break;	
-        default: //parent
-            childPids.push(pid);
-            break;
-    }
-}
-
 void removeChildProcess() {
     if (childPids.empty()) {
         std::cout << "Nothing to delete.\n";
@@ -67,13 +52,25 @@ void removeAllChildProcess() {
 int main() {
     char operation;
     bool isFinished = false;
+    pid_t pid;
 
     while(!isFinished) {
         printMenu();
         operation = getch();
         switch (operation) {
             case '+':
-                addChildProcess();
+                pid = fork();
+                switch(pid) {
+                    case -1: 
+                        //failed to frok
+                        break;
+                    case 0: //child
+                        execv("child.out", NULL);
+                        return 0;
+                    default: //parent
+                        childPids.push(pid);
+                        break;
+                }
                 break;
             case '-':
                 removeChildProcess();
