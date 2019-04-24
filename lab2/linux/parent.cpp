@@ -2,16 +2,7 @@
 #include <stack> 
 #include <sys/types.h>
 #include <signal.h>
-
-#include <ctime>    
 #include <unistd.h>
-#include <ncurses.h>
-#include <sstream>
-#include <string>
-#include <cstring>
-#include <sys/wait.h>
-#include <sys/mman.h>
-#include <cstdlib>
 
 #define DELAY_TIME_SEC 2
 
@@ -31,7 +22,7 @@ void addChildProcess() {
             //failed to frok
             break;
         case 0: //child
-            execv("child", NULL);
+            execv("child.out", NULL);
             break;	
         default: //parent
             childPids.push(pid);
