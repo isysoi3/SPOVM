@@ -23,6 +23,12 @@ int getch() {
     return ch;
 }
 
+void killPid(pid_t pid) {
+     if (kill(pid, SIGTERM) == -1) {
+          kill(pid, SIGKILL);
+     }
+}
+
 void printMenu() {
     std::cout << "Child processes: " << childPids.size() << std::endl;
     std::cout << "[+] - add process\n";
@@ -36,7 +42,7 @@ void removeChildProcess() {
     } else {
         pid_t childPid = childPids.top();
         childPids.pop();
-        kill(childPid, SIGKILL);
+        killPid(childPid);
     }
 }
 
@@ -44,7 +50,7 @@ void removeAllChildProcess() {
     while(!childPids.empty()) {
         pid_t childPid = childPids.top();
         childPids.pop();
-        kill(childPid, SIGKILL);
+        killPid(childPid);
     }
 }
 
