@@ -3,10 +3,25 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
+#include <termios.h>
+#include <unistd.h>
+#include <stdio.h>
 
 #define DELAY_TIME_SEC 2
 
 std::stack <pid_t> childPids; 
+
+int getch() {
+    struct termios oldattr, newattr;
+    int ch;
+    tcgetattr( STDIN_FILENO, &oldattr );
+    newattr = oldattr;
+    newattr.c_lflag &= ~( ICANON | ECHO );
+    tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
+    ch = getchar();
+    tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
+    return ch;
+}
 
 void printMenu() {
     std::cout << "Child processes: " << childPids.size() << std::endl;
@@ -55,8 +70,7 @@ int main() {
 
     while(!isFinished) {
         printMenu();
-        std::cin >> operation;
-        std::cin.ignore();
+        operation = getch();
         switch (operation) {
             case '+':
                 addChildProcess();
