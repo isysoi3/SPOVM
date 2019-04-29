@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <semaphore.h>
 
@@ -11,7 +12,7 @@
 int main(int argc, char* argv[])
 {
     if (argc < 4) {
-        printf("fff");
+        printf("Faild to init client");
         return -1;
     }
     int fd[2];
@@ -19,36 +20,43 @@ int main(int argc, char* argv[])
  
     fd[0] = atoi(argv[0]);
     fd[1] = atoi(argv[1]);
-    char buffer[LINE_LEN]; 
-
+    
     sem_t* semaphoreRead = sem_open(argv[2], 0);
-    sem_t* semaphoreWrite = sem_open(argv[3], 0);
     if (semaphoreRead == SEM_FAILED) { 
         printf("Semaphore Failed"); 
+        sem_close(semaphoreRead);
         return -1; 
     } 
+    sem_t* semaphoreWrite = sem_open(argv[3], 0);
     if (semaphoreWrite == SEM_FAILED) { 
         printf("Semaphore Failed"); 
         return -1; 
     }
 
     while(true) {
+        char buffer[LINE_LEN]; 
+
         close(fd[1]);
-
+        printf("semaphoreWriteClient wait\n"); 
         sem_wait(semaphoreWrite);
+        printf("semaphoreWriteClient waited\n"); 
 
-        read(fd[0], buffer, 100);
+        read(fd[0], buffer, LINE_LEN);
         close(fd[0]);
         std::cout << "Accepted string from server process: " << buffer << std::endl;
 
+        printf("semaphoreReadClient post\n"); 
         sem_post(semaphoreRead);
-
+        printf("semaphoreReadClient posted\n"); 
         if (strcmp(buffer, "q") == 0) {
             break;
         }
     }
 
-    std::cout << "Client process finish work.";
+    std::cout << "Client process finish work." << std::endl;
+
+    sem_close(semaphoreWrite);
+    sem_close(semaphoreRead);
 
     return 0;
 }

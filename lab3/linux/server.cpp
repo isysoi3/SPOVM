@@ -20,13 +20,15 @@ int main() {
     } 
     
     sem_t* semaphoreRead = sem_open(READ_SEM, O_CREAT, 0777, 0);
-    sem_t* semaphoreWrite = sem_open(WRITE_SEM, O_CREAT, 0777, 0);
     if (semaphoreRead == SEM_FAILED) { 
         printf("Semaphore Failed Read\n"); 
         return -1; 
     } 
+
+    sem_t* semaphoreWrite = sem_open(WRITE_SEM, O_CREAT, 0777, 0);
     if (semaphoreWrite == SEM_FAILED) { 
         printf("Semaphore Failed Write\n"); 
+        sem_close(semaphoreRead);
         return -1; 
     }
 
@@ -35,12 +37,13 @@ int main() {
     case -1: 
     	return -1; 
     case 0: 
-        execl("client.out",
-        std::to_string(fd[0]).c_str(),
-        std::to_string(fd[1]).c_str(),
-        READ_SEM,
-        WRITE_SEM,
-        NULL);
+        execl(
+            "client.out",
+            std::to_string(fd[0]).c_str(),
+            std::to_string(fd[1]).c_str(),
+            READ_SEM,
+            WRITE_SEM,
+            NULL);
     	return 0;
     default:
         char userInput[LINE_LEN];
@@ -51,15 +54,18 @@ int main() {
             write(fd[1], userInput, strlen(userInput) + 1); 
             close(fd[1]); 
 
-            sem_post(semaphoreWrite);
-            
             std::cout << "Send string to client process: " << userInput << std::endl;
-            
 
-            if (strcmp(userInput, "q") == 0) {
-                break;
-            }
+            printf("semaphoreWriteServer post\n"); 
+            sem_post(semaphoreWrite);
+            printf("semaphoreWriteServer posted\n"); 
+            
+            printf("semaphoreReadServer wait\n"); 
             sem_wait(semaphoreRead);
+            printf("semaphoreReadServer waited\n"); 
+            // if (strcmp(userInput, "q") == 0) {
+            //     break;
+            // }
         }
       
         break;
