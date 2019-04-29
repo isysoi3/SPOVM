@@ -59,7 +59,6 @@ int main() {
             sem_wait(semaphoreRead);
 
             if (strcmp(userInput, "q") == 0) {
-                printf("adssdsa Failed\n"); 
                 break;
             }
         }
