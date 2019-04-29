@@ -2,59 +2,68 @@
 #include <Windows.h>
 #include <string.h>
 
-#define SEMAPHORE_START_READING_NAME "SEM_START"
-#define SEMAPHORE_END_READING_NAME "SEM_END"
+#define SEMAPHORE_READ_NAME "SEM_READ"
+#define SEMAPHORE_WRITE_NAME "SEM_WRITE"
 #define CLIENT_END_EVENT_NAME "CLIENT_END_EVENT"
 #define PIPE_NAME "\\\\.\\pipe\\server_pipe"
 
 #define LINE_LEN 512
 
+void closeHandles(HANDLE semRead, HANDLE semWrite, HANDLE pipe) {
+    CloseHandle(semWrite);
+    CloseHandle(semRead);
+    CloseHandle(pipe);
+}
+
 int main()
 {
-    HANDLE semaphoreStartReading = OpenSemaphore(SEMAPHORE_ALL_ACCESS , NULL,  SEMAPHORE_START_READING_NAME); 
-    if (semaphoreStartReading == NULL)
+    HANDLE semaphoreRead = OpenSemaphore(SEMAPHORE_ALL_ACCESS, NULL, SEMAPHORE_READ_NAME);
+    if (semaphoreRead == NULL)
     {
         std::cout << "Opening semaphore start reading failed." << '\n';
         return GetLastError();
     }
+    WaitForSingleObject(semaphoreRead, INFINITE); 
 
-    HANDLE semaphoreEndReading = OpenSemaphore(SEMAPHORE_ALL_ACCESS , NULL, SEMAPHORE_END_READING_NAME); 
-    if (semaphoreEndReading == NULL)
+    HANDLE semaphoreWrite = OpenSemaphore(SEMAPHORE_ALL_ACCESS, NULL, SEMAPHORE_WRITE_NAME);
+    if (semaphoreWrite == NULL)
     {
         std::cout << "Opening semaphore end reading failed." << '\n';
+        CloseHandle(semaphoreRead);
         return GetLastError();
     }
 
-    HANDLE pipe = CreateFile(PIPE_NAME, GENERIC_READ, FILE_SHARE_READ,NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if(pipe == INVALID_HANDLE_VALUE)
+    HANDLE pipe = CreateFile(PIPE_NAME, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (pipe == INVALID_HANDLE_VALUE)
     {
         std::cout << "Opening pipe failed." << '\n';
-        CloseHandle(semaphoreStartReading);
+        CloseHandle(semaphoreWrite);
+        CloseHandle(semaphoreRead);
         return GetLastError();
     }
 
-    char str [LINE_LEN];
+    char str[LINE_LEN];
     DWORD dwBytesRead;
-    WaitForSingleObject(semaphoreEndReading, INFINITE); 
-    while(true) {
-        ReleaseSemaphore(semaphoreEndReading, 1, NULL); 
-        WaitForSingleObject(semaphoreStartReading, INFINITE); 
-        std::cout << "Client process get string : ";
-        if (!ReadFile(pipe,  str, sizeof(str), &dwBytesRead, NULL))  {   
-            CloseHandle(pipe);   
-            return GetLastError();  
+
+    while (true)
+    {
+        WaitForSingleObject(semaphoreWrite, INFINITE);
+        ReleaseSemaphore(semaphoreRead, 1, NULL);
+        std::cout << "Client woken up.\n";
+        if (!ReadFile(pipe, str, sizeof(str), &dwBytesRead, NULL))
+        {
+            closeHandles(semaphoreRead, semaphoreWrite, pipe);
+            return GetLastError();
         }
-        std::cout << str << '\n';
-        ReleaseSemaphore(semaphoreStartReading, 1, NULL); 
-        WaitForSingleObject(semaphoreEndReading, INFINITE); 
+        std::cout << "Accepted string from server process: " << str << '\n';
+        ReleaseSemaphore(semaphoreWrite, 1, NULL);
+        WaitForSingleObject(semaphoreRead, INFINITE);
         if (strcmp(str, "q") == 0)
         {
             break;
         }
     }
-    
-    std::cout << "Client process finish work.";
-    CloseHandle(semaphoreStartReading);
-    CloseHandle(semaphoreEndReading);
+
+    closeHandles(semaphoreRead, semaphoreWrite, pipe);
     return 0;
 }

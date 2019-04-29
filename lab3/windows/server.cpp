@@ -2,36 +2,45 @@
 #include <Windows.h>
 #include <string.h>
 
-#define SEMAPHORE_START_READING_NAME "SEM_START"
-#define SEMAPHORE_END_READING_NAME "SEM_END"
+#define SEMAPHORE_READ_NAME "SEM_READ"
+#define SEMAPHORE_WRITE_NAME "SEM_WRITE"
 #define PIPE_NAME "\\\\.\\pipe\\server_pipe"
 #define CLIENT_PROCESS "client.exe"
 
 #define LINE_LEN 512
 
+void closeHandles(HANDLE semRead, HANDLE semWrite, HANDLE pipe, PROCESS_INFORMATION piApp) {
+    CloseHandle(piApp.hThread);  
+    CloseHandle(piApp.hProcess); 
+    CloseHandle(semWrite);
+    CloseHandle(semRead);
+    CloseHandle(pipe);
+}
+
 int main()
 {
-    HANDLE semaphoreStartReading = CreateSemaphore(NULL, 1, 1, SEMAPHORE_START_READING_NAME);
-    if (semaphoreStartReading == NULL)
+    HANDLE semaphoreRead = CreateSemaphore(NULL, 1, 1, SEMAPHORE_READ_NAME);
+    if (semaphoreRead == NULL)
     {
         std::cout << "Creating semaphore start reading failed." << '\n';
         return GetLastError();
     }
-    WaitForSingleObject(semaphoreStartReading, INFINITE); 
 
-    HANDLE semaphoreEndReading = CreateSemaphore(NULL, 1, 1, SEMAPHORE_END_READING_NAME);
-    if (semaphoreEndReading == NULL)
+    HANDLE semaphoreWrite = CreateSemaphore(NULL, 1, 1, SEMAPHORE_WRITE_NAME);
+    if (semaphoreWrite == NULL)
     {
         std::cout << "Creating semaphore end reading failed." << '\n';
-        CloseHandle(semaphoreStartReading);
+        CloseHandle(semaphoreRead);
         return GetLastError();
     }
+    WaitForSingleObject(semaphoreWrite, INFINITE);
 
     HANDLE pipe = CreateNamedPipe(PIPE_NAME, PIPE_ACCESS_DUPLEX, PIPE_TYPE_MESSAGE | PIPE_WAIT, 1, 0, 0, INFINITE, NULL);
     if (pipe == INVALID_HANDLE_VALUE)
     {
         std::cout << "Creating pipe failed." << '\n';
-        CloseHandle(semaphoreStartReading);
+        CloseHandle(semaphoreWrite);
+        CloseHandle(semaphoreRead);
         return GetLastError();
     }
 
@@ -42,7 +51,8 @@ int main()
     if (!CreateProcess(CLIENT_PROCESS, NULL, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &piApp))
     {
         std::cout << "Error were occurred while creating child process.";
-        CloseHandle(semaphoreStartReading);
+        CloseHandle(semaphoreWrite);
+        CloseHandle(semaphoreRead);
         CloseHandle(pipe);
         return 0;
     }
@@ -51,10 +61,7 @@ int main()
     if (!ConnectNamedPipe(pipe, NULL))
     {
         std::cout << "Client doesn't connected to server!";
-        CloseHandle(piApp.hThread);  
-        CloseHandle(piApp.hProcess); 
-        CloseHandle(semaphoreStartReading);
-        CloseHandle(pipe);
+        closeHandles(semaphoreRead, semaphoreWrite, pipe, piApp);
         return GetLastError();
     }
 
@@ -64,32 +71,24 @@ int main()
     {
         std::cout << "To finish server process enter q. Enter string: ";
         std::cin.getline(str, LINE_LEN);
-        ReleaseSemaphore(semaphoreStartReading, 1, NULL); 
-        WaitForSingleObject(semaphoreEndReading, INFINITE);
+        ReleaseSemaphore(semaphoreWrite, 1, NULL); 
+        WaitForSingleObject(semaphoreRead, INFINITE);
         if (!WriteFile(pipe, str, sizeof(str), &dwBytesWrite, NULL))
         {
             std::cout << "Error were occurred while writing to pipe.";
-            CloseHandle(piApp.hThread);  
-            CloseHandle(piApp.hProcess); 
-            CloseHandle(semaphoreStartReading);
-            CloseHandle(pipe);
+            closeHandles(semaphoreRead, semaphoreWrite, pipe, piApp);
             return GetLastError();
         }
-
-        std::cout << "Send string to client process...\n";
-        WaitForSingleObject(semaphoreStartReading, INFINITE);
-        ReleaseSemaphore(semaphoreEndReading, 1, NULL); 
+        std::cout << "Send string to client process: " << str << '\n';
+        WaitForSingleObject(semaphoreWrite, INFINITE);
+        ReleaseSemaphore(semaphoreRead, 1, NULL); 
         if (strcmp(str, "q") == 0)
         {
             break;
         }
     }
-    std::cout << "Server process finish work.";
+
     WaitForSingleObject(piApp.hProcess, INFINITE);
-    CloseHandle(piApp.hThread);  
-    CloseHandle(piApp.hProcess); 
-    CloseHandle(semaphoreStartReading);
-    CloseHandle(semaphoreEndReading);
-    CloseHandle(pipe);
+    closeHandles(semaphoreRead, semaphoreWrite, pipe, piApp);
     return 0;
 }
