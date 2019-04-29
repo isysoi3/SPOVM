@@ -38,7 +38,7 @@ int main() {
     	return -1; 
     case 0: 
         execl(
-            "client.out",
+            "client",
             std::to_string(fd[0]).c_str(),
             std::to_string(fd[1]).c_str(),
             READ_SEM,
@@ -46,28 +46,24 @@ int main() {
             NULL);
     	return 0;
     default:
-        char userInput[LINE_LEN];
-        std::cout << "To finish server process enter q. Enter string:" << std::endl;
+        printf("To finish server process enter q. Enter string: \n");
+        close(fd[0]);
         while(true) {
-            close(fd[0]);
+            char userInput[LINE_LEN];
             std::cin >> userInput;
-            write(fd[1], userInput, strlen(userInput) + 1); 
-            close(fd[1]); 
 
-            std::cout << "Send string to client process: " << userInput << std::endl;
-
-            printf("semaphoreWriteServer post\n"); 
+            write(fd[1], userInput, strlen(userInput) + 1);
+            printf("Send string to client process: %s \n", userInput);
             sem_post(semaphoreWrite);
-            printf("semaphoreWriteServer posted\n"); 
-            
-            printf("semaphoreReadServer wait\n"); 
             sem_wait(semaphoreRead);
-            printf("semaphoreReadServer waited\n"); 
-            // if (strcmp(userInput, "q") == 0) {
-            //     break;
-            // }
+
+            if (strcmp(userInput, "q") == 0) {
+                printf("фф waited\n");
+                break;
+            }
         }
-      
+        close(fd[1]); 
+        wait(NULL);
         break;
     }
 
