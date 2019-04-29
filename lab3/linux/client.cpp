@@ -33,16 +33,16 @@ int main(int argc, char* argv[])
         return -1; 
     }
 
-    close(fd[1]); 
     while(true) {
+        close(fd[1]); 
         char buffer[LINE_LEN]; 
-        
+
         sem_wait(semaphoreWrite);
         read(fd[0], buffer, LINE_LEN);
+        printf("Accepted string from server process: %s\n", buffer);
         sem_post(semaphoreRead);
         
         if (strcmp(buffer, "q") == 0) {
-            printf("aa waited\n");
             break;
         }
     }
