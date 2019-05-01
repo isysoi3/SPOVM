@@ -48,16 +48,14 @@ int main()
     while (true)
     {
         WaitForSingleObject(semaphoreWrite, INFINITE);
-        ReleaseSemaphore(semaphoreRead, 1, NULL);
-        std::cout << "Client woken up.\n";
+        std::cout << "Client woken up\n";
         if (!ReadFile(pipe, str, sizeof(str), &dwBytesRead, NULL))
         {
             closeHandles(semaphoreRead, semaphoreWrite, pipe);
             return GetLastError();
         }
         std::cout << "Accepted string from server process: " << str << '\n';
-        ReleaseSemaphore(semaphoreWrite, 1, NULL);
-        WaitForSingleObject(semaphoreRead, INFINITE);
+        ReleaseSemaphore(semaphoreRead, 1, NULL);
         if (strcmp(str, "q") == 0)
         {
             break;
