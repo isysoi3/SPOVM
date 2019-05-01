@@ -72,7 +72,6 @@ int main()
         std::cout << "To finish server process enter q. Enter string: ";
         std::cin.getline(str, LINE_LEN);
         ReleaseSemaphore(semaphoreWrite, 1, NULL); 
-        WaitForSingleObject(semaphoreRead, INFINITE);
         if (!WriteFile(pipe, str, sizeof(str), &dwBytesWrite, NULL))
         {
             std::cout << "Error were occurred while writing to pipe.";
@@ -80,8 +79,7 @@ int main()
             return GetLastError();
         }
         std::cout << "Send string to client process: " << str << '\n';
-        WaitForSingleObject(semaphoreWrite, INFINITE);
-        ReleaseSemaphore(semaphoreRead, 1, NULL); 
+        WaitForSingleObject(semaphoreRead, INFINITE);
         if (strcmp(str, "q") == 0)
         {
             break;
