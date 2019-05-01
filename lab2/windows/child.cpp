@@ -1,5 +1,6 @@
 #include <iostream>
 #include <windows.h>
+#include <string>
 #define DELAY_TIME_SEC 2
 
 int main(int argc, char *argv[])
@@ -11,6 +12,8 @@ int main(int argc, char *argv[])
         return GetLastError();
     }
 
+    std::string processString = "Child process id - ";
+    processString.append(argv[1]); 
     while (true)
     {
         DWORD dwWaitResult = WaitForSingleObject(hEndEvent, 0);
@@ -18,7 +21,11 @@ int main(int argc, char *argv[])
         {
             break;
         }
-        std::cout << "Child process string: " << argv[1] << '\n';
+        for(std::string::size_type i = 0; i < processString.size(); ++i) {
+            std::cout << processString[i];
+        } 
+        std::cout << std::endl;
+       
         Sleep(DELAY_TIME_SEC * 1000);
     }
 
