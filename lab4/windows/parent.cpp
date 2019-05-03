@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stack>
 #include <windows.h>
-#include <vector>
 #include <string>
 
 #define BUF_SIZE 256
@@ -13,20 +12,20 @@ std::stack<HANDLE> childEndEvents;
 
 void printMenu()
 {
-    EnterCriticalSection (&cs); 
+    EnterCriticalSection(&cs);
     std::cout << "Child threads: " << childThreads.size() << "\n";
     std::cout << "[+] - add thread\n";
     std::cout << "[-] - remove thread\n";
     std::cout << "[q] - exit\n";
-    LeaveCriticalSection(&cs); 
+    LeaveCriticalSection(&cs);
 }
 
-DWORD WINAPI Add(LPVOID endEvent)
+DWORD WINAPI threadFunc(LPVOID endEvent)
 {
     HANDLE hEndEvent = (HANDLE)endEvent;
     DWORD threadId = GetCurrentThreadId();
-    std::string processString = "Child process id - ";
-    processString.append(std::to_string(threadId));
+    std::string threadString = "Child thread id - ";
+    threadString.append(std::to_string(threadId));
     while (true)
     {
         DWORD dwWaitResult = WaitForSingleObject(hEndEvent, 0);
@@ -34,13 +33,13 @@ DWORD WINAPI Add(LPVOID endEvent)
         {
             break;
         }
-        EnterCriticalSection (&cs); 
-        for (std::string::size_type i = 0; i < processString.size(); ++i)
+        EnterCriticalSection(&cs);
+        for (std::string::size_type i = 0; i < threadString.size(); ++i)
         {
-            std::cout << processString[i];
+            std::cout << threadString[i];
         }
         std::cout << std::endl;
-        LeaveCriticalSection(&cs); 
+        LeaveCriticalSection(&cs);
         Sleep(DELAY_TIME_SEC * 1000);
     }
     return 0;
@@ -49,13 +48,15 @@ DWORD WINAPI Add(LPVOID endEvent)
 void addChildThread()
 {
     HANDLE hEndEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (hEndEvent == NULL) {
+    if (hEndEvent == NULL)
+    {
         std::cout << "Error were occurred while creating closing event for new thread.\n";
         return;
     }
     DWORD IDThread;
-    HANDLE hThread = CreateThread(NULL, 0, Add, (void *)hEndEvent, 0, &IDThread);
-    if (hThread == NULL) {
+    HANDLE hThread = CreateThread(NULL, 0, threadFunc, (void *)hEndEvent, 0, &IDThread);
+    if (hThread == NULL)
+    {
         std::cout << "Error were occurred while creating new thread.\n";
         CloseHandle(hEndEvent);
         return;
@@ -76,11 +77,11 @@ void killThread()
     CloseHandle(hThread);
 }
 
-void removeChildProcess()
+void removeChildThread()
 {
     if (childThreads.empty())
     {
-        EnterCriticalSection (&cs); 
+        EnterCriticalSection(&cs);
         std::cout << "Nothing to delete.\n";
         LeaveCriticalSection(&cs);
     }
@@ -90,7 +91,7 @@ void removeChildProcess()
     }
 }
 
-void removeAllChildProcess()
+void removeAllChildThreads()
 {
     while (!childThreads.empty())
     {
@@ -102,7 +103,7 @@ int main()
 {
     char operation;
     bool isFinished = false;
-    InitializeCriticalSection(&cs); 
+    InitializeCriticalSection(&cs);
     while (!isFinished)
     {
         printMenu();
@@ -114,16 +115,16 @@ int main()
             addChildThread();
             break;
         case '-':
-            removeChildProcess();
+            removeChildThread();
             break;
         case 'q':
-            removeAllChildProcess();
+            removeAllChildThreads();
             isFinished = true;
             break;
         default:
             break;
         }
     }
-    DeleteCriticalSection(&cs); 
+    DeleteCriticalSection(&cs);
     return 0;
 }
