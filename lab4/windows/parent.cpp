@@ -11,8 +11,6 @@ CRITICAL_SECTION cs;
 std::stack<HANDLE> childThreads;
 std::stack<HANDLE> childEndEvents;
 
-int newThreadNum = 0;
-
 void printMenu()
 {
     EnterCriticalSection (&cs); 
@@ -51,13 +49,19 @@ DWORD WINAPI Add(LPVOID endEvent)
 void addChildThread()
 {
     HANDLE hEndEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    //if (hEndEvent == NULL)   return GetLastError();
+    if (hEndEvent == NULL) {
+        std::cout << "Error were occurred while creating closing event for new thread.\n";
+        return;
+    }
     DWORD IDThread;
     HANDLE hThread = CreateThread(NULL, 0, Add, (void *)hEndEvent, 0, &IDThread);
-    // if (hThread == NULL) return GetLastError();
+    if (hThread == NULL) {
+        std::cout << "Error were occurred while creating new thread.\n";
+        CloseHandle(hEndEvent);
+        return;
+    }
     childEndEvents.push(hEndEvent);
     childThreads.push(hThread);
-    //childThreads.push(std::make_pair(piApp, handleEndEvent));
 }
 
 void killThread()
