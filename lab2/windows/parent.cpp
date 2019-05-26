@@ -4,17 +4,21 @@
 
 #define CHILD_PROCESS_NAME "child.exe"
 #define BUF_SIZE 256
+#define MUTEX_CONSOLE_NAME "console_mutex"
 
 std::stack<std::pair<PROCESS_INFORMATION, HANDLE>> childProcesses;
 
 int newProcessNum = 0;
+HANDLE consoleMutex;
 
 void printMenu()
 {
+    WaitForSingleObject(consoleMutex, INFINITE);
     std::cout << "Child processes: " << childProcesses.size() << "\n";
     std::cout << "[+] - add process\n";
     std::cout << "[-] - remove process\n";
     std::cout << "[q] - exit\n";
+    ReleaseMutex(consoleMutex);
 }
 
 HANDLE createEvent()
@@ -24,7 +28,9 @@ HANDLE createEvent()
     HANDLE handleEndEvent = CreateEvent(NULL, FALSE, FALSE, endEventName);
     if (handleEndEvent == NULL)
     {
+        WaitForSingleObject(consoleMutex, INFINITE);
         std::cout << "Failed to create end event for new process";
+        ReleaseMutex(consoleMutex);
     }
     return handleEndEvent;
 }
@@ -44,7 +50,9 @@ void addChildProcess()
     si.cb = sizeof(STARTUPINFO);
     if (!CreateProcess(NULL, childProcessArgs, NULL, NULL, FALSE, NULL, NULL, NULL, &si, &piApp))
     {
+        WaitForSingleObject(consoleMutex, INFINITE);
         std::cout << "Failed to create new process\n";
+        ReleaseMutex(consoleMutex);
         return;
     }
     newProcessNum++;
@@ -64,7 +72,9 @@ void removeChildProcess()
 {
     if (childProcesses.empty())
     {
+        WaitForSingleObject(consoleMutex, INFINITE);
         std::cout << "Nothing to delete.\n";
+        ReleaseMutex(consoleMutex);
     }
     else
     {
@@ -89,6 +99,12 @@ int main()
     char operation;
     bool isFinished = false;
 
+    consoleMutex = CreateMutex(NULL, FALSE, MUTEX_CONSOLE_NAME);
+    if (consoleMutex == NULL)
+    {
+        std::cout << "Create mutext failed.\n";
+        return GetLastError();
+    }
     while (!isFinished)
     {
         printMenu();
@@ -111,5 +127,6 @@ int main()
         }
     }
 
+    CloseHandle(consoleMutex);
     return 0;
 }
