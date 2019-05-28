@@ -2,26 +2,6 @@
 #include <windowsx.h>
 #include <iostream>
 
-// находит место и возвращает указатель
-void* myMalloc(int size) {
-	void* pLocal = memoryAllocation(size);
-
-    if (pLocal == nullptr) {
-		// попытка дефрагментации памяти и ее повторного выделения
-		UINT uMaxFreeMem = LocalCompact(size);
-		std::cout << "Trying to defragmentate memory" << std::endl;
-		pLocal = memoryAllocation(size);
-		if (pLocal == nullptr) {
-			std::cout << "Not enough memory" << std::endl;
-			return nullptr;
-		} else {
-            return pLocal;
-        }
-	} else {
-	    return pLocal;
-    }
-}
-
 //выделение памяти
 void* memoryAllocation(int size) {
     //Выделяет указанное количество байтов из кучи.
@@ -46,6 +26,26 @@ void* memoryAllocation(int size) {
         std::cout << GetLastError() << std::endl;
         return nullptr;
 	}
+}
+
+// находит место и возвращает указатель
+void* myMalloc(int size) {
+	void* pLocal = memoryAllocation(size);
+
+    if (pLocal == nullptr) {
+		// попытка дефрагментации памяти и ее повторного выделения
+		UINT uMaxFreeMem = LocalCompact(size);
+		std::cout << "Trying to defragmentate memory" << std::endl;
+		pLocal = memoryAllocation(size);
+		if (pLocal == nullptr) {
+			std::cout << "Not enough memory" << std::endl;
+			return nullptr;
+		} else {
+            return pLocal;
+        }
+	} else {
+	    return pLocal;
+    }
 }
 
 void myFree(void* ptr) {
@@ -93,7 +93,7 @@ int main() {
 	char* tmp;
 	tmp = (char*)myMalloc(20);
 	std::cin >> tmp;
-	std::cout << tmp;
+	std::cout << tmp << '\n';
 
 	tmp = (char*)myRealloc(tmp, 30);
 	std::cin >> tmp;
