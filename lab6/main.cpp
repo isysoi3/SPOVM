@@ -93,11 +93,11 @@ int main() {
 	char* tmp;
 	tmp = (char*)myMalloc(20);
 	std::cin >> tmp;
-	std::cout << tmp << '\n';
+	std::cout << tmp << std::endl;
 
 	tmp = (char*)myRealloc(tmp, 30);
 	std::cin >> tmp;
-	std::cout << tmp;
+	std::cout << tmp << std::endl;
 	myFree(tmp);
 
 	return 0;
