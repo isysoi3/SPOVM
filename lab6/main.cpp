@@ -14,7 +14,7 @@ void* memoryAllocation(int size) {
 			// Запись дескриптора в начало выделенной памяти
 			pLocal = hmemLocal;
 			// Установка начала памяти на следующий после дескриптора байт
-			pLocal = (char*)pLocal + sizeof(HLOCAL); //(мне не нрав что чар!!!ЛИЗА)
+			pLocal = (char*)pLocal + sizeof(HLOCAL);
 			return pLocal;
 		} else {
 			std::cout << "Error in locking block" << std::endl;
@@ -50,7 +50,7 @@ void* myMalloc(int size) {
 
 void myFree(void* ptr) {
     // получение дескриптора памяти
-	HLOCAL hmemLocal = (char*)ptr - sizeof(HLOCAL); //(мне не нрав что чар!!!ЛИЗА)
+	HLOCAL hmemLocal = (char*)ptr - sizeof(HLOCAL);
 
 	// разлок hmemLocal
 	LocalUnlock(hmemLocal);
@@ -60,7 +60,7 @@ void myFree(void* ptr) {
 		std::cout << "Error in making memory free" << std::endl ; 
         std::cout << GetLastError() << std::endl;
 	} else {
-		std::cout << std::endl << "Memory is free";
+		std::cout << "Memory is free" << std::endl;
         ptr = nullptr;
 	}
 }
@@ -74,7 +74,7 @@ void* myRealloc(void* ptr, int newSize) {
 
 	if(hmemLoDiscard == NULL) {
 		std::cout << "Error in realloc block" << std::endl;
-        std::cout << GetLastError() <<std::endl;
+        std::cout << GetLastError() << std::endl;
 		return nullptr;
 	}
 
@@ -82,7 +82,7 @@ void* myRealloc(void* ptr, int newSize) {
 	startMem = LocalLock(hmemLoDiscard);
 	if(startMem == NULL) {
 		std::cout << "Error in locking block" << std::endl;
-		std::cout << GetLastError() <<std::endl;
+		std::cout << GetLastError() << std::endl;
 	}
 	startMem = hmemLoDiscard;
 	return (char*)startMem + sizeof(HLOCAL);
